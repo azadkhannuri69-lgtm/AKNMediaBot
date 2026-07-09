@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = ""
+TOKEN = os.getenv("TOKEN")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

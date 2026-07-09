@@ -12,7 +12,8 @@ from telegram.ext import (
     filters,
 )
 from config import TOKEN
-
+from database import cursor, conn
+from payments import create_checkout_session
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ["🎬 خرید اشتراک"],

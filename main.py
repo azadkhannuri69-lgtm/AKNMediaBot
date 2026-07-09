@@ -11,10 +11,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-import os
-
-TOKEN = os.getenv("TOKEN")
-
+from config import TOKEN
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [

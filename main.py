@@ -23,7 +23,7 @@ from config import (
 )
 
 from payments import create_checkout_session
-from database import cursor, conn
+from database import cursor
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -50,7 +50,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text
 
-      if text == "🎬 خرید اشتراک":
+    if text == "🎬 خرید اشتراک":
 
         keyboard = [
             [
@@ -97,9 +97,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         cursor.execute(
             """
-            SELECT
-                subscription,
-                status
+            SELECT subscription, status
             FROM users
             WHERE user_id=?
             """,
@@ -122,6 +120,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "❌ هنوز اشتراکی برای این حساب ثبت نشده است."
             )
+
     elif text == "ℹ️ راهنما":
 
         await update.message.reply_text(
@@ -137,19 +136,15 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 application = Application.builder().token(TOKEN).build()
 
-application.add_handler(
-    CommandHandler(
-        "start",
-        start,
-    )
-)
-
+application.add_handler(CommandHandler("start", start))
 application.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         menu,
     )
 )
+
+
 async def run():
 
     print("Bot is running...")
@@ -162,16 +157,13 @@ async def run():
     )
 
     try:
-
         while True:
             await asyncio.sleep(3600)
 
     except (KeyboardInterrupt, SystemExit):
-
         pass
 
     finally:
-
         await application.updater.stop()
         await application.stop()
         await application.shutdown()

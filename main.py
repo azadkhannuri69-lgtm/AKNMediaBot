@@ -1,9 +1,12 @@
+import asyncio
+
 from telegram import (
     Update,
     ReplyKeyboardMarkup,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -11,10 +14,20 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from config import TOKEN
-from database import cursor, conn
+
+from config import (
+    TOKEN,
+    PRICE_1_MONTH,
+    PRICE_3_MONTHS,
+    PRICE_12_MONTHS,
+)
+
 from payments import create_checkout_session
+from database import cursor, conn
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     keyboard = [
         ["🎬 خرید اشتراک"],
         ["👤 حساب من"],
@@ -23,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_markup = ReplyKeyboardMarkup(
         keyboard,
-        resize_keyboard=True
+        resize_keyboard=True,
     )
 
     await update.message.reply_text(
@@ -34,6 +47,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     text = update.message.text
 
     if text == "🎬 خرید اشتراک":
@@ -42,61 +56,126 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton(
                     "🥉 اشتراک ۱ ماهه (€2.99)",
-                    url="https://buy.stripe.com/aFa5kF4IIeOj95d2epfnO01",
+                    url=create_checkout_session(
+                        PRICE_1_MONTH,
+                        "https://aknmediaweb.onrender.com/success",
+                        "https://aknmediaweb.onrender.com/cancel",
+                        update.effective_user.id,
+                    ),
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🥈 اشتراک ۳ ماهه (€6.99)",
-                    url="https://buy.stripe.com/3cIaEZdfe35BftBf1bfnO02",
+                    url=create_checkout_session(
+                        PRICE_3_MONTHS,
+                        "https://aknmediaweb.onrender.com/success",
+                        "https://aknmediaweb.onrender.com/cancel",
+                        update.effective_user.id,
+                    ),
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🥇 اشتراک ۱۲ ماهه (€19.99)",
-                    url="https://buy.stripe.com/6oU6oJ6QQay35T1f1bfnO00",
+                    url=create_checkout_session(
+                        PRICE_12_MONTHS,
+                        "https://aknmediaweb.onrender.com/success",
+                        "https://aknmediaweb.onrender.com/cancel",
+                        update.effective_user.id,
+                    ),
                 )
             ],
         ]
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
         await update.message.reply_text(
             "💎 لطفاً اشتراک مورد نظر را انتخاب کنید:",
-            reply_markup=reply_markup,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+            elif text == "👤 حساب من":
+
+        cursor.execute(
+            """
+            SELECT
+                subscription,
+                status
+            FROM users
+            WHERE user_id=?
+            """,
+            (
+                update.effective_user.id,
+            ),
         )
 
-    elif text == "👤 حساب من":
-        await update.message.reply_text(
-            "👤 هنوز اشتراکی برای این حساب ثبت نشده است."
-        )
+        user = cursor.fetchone()
+
+        if user:
+
+            await update.message.reply_text(
+                f"📦 اشتراک: {user[0]}\n"
+                f"📌 وضعیت: {user[1]}"
+            )
+
+        else:
+
+            await update.message.reply_text(
+                "❌ هنوز اشتراکی برای این حساب ثبت نشده است."
+            )
 
     elif text == "ℹ️ راهنما":
+
         await update.message.reply_text(
-            "📞 در صورت نیاز با پشتیبانی AKN Media تماس بگیرید."
+            "📞 برای دریافت پشتیبانی با AKN Media تماس بگیرید."
         )
 
     else:
+
         await update.message.reply_text(
             "لطفاً یکی از دکمه‌های منو را انتخاب کنید."
         )
 
 
-app = Application.builder().token(TOKEN).build()
+application = Application.builder().token(TOKEN).build()
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu))
+application.add_handler(
+    CommandHandler(
+        "start",
+        start,
+    )
+)
 
-import asyncio
+application.add_handler(
+    MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        menu,
+    )
+)
+async def run():
 
-async def main():
     print("Bot is running...")
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
 
-    while True:
-        await asyncio.sleep(3600)
+    await application.initialize()
+    await application.start()
+
+    await application.updater.start_polling(
+        drop_pending_updates=True,
+    )
+
+    try:
+
+        while True:
+            await asyncio.sleep(3600)
+
+    except (KeyboardInterrupt, SystemExit):
+
+        pass
+
+    finally:
+
+        await application.updater.stop()
+        await application.stop()
+        await application.shutdown()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run())

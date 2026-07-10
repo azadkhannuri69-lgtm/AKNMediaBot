@@ -22,18 +22,26 @@ def stripe_webhook():
             STRIPE_WEBHOOK_SECRET,
         )
 
-    except Exception:
-        return jsonify({"success": False}), 400
+    except ValueError:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    except stripe.error.SignatureVerificationError:
+        return jsonify({"error": "Invalid signature"}), 400
 
     if event["type"] == "checkout.session.completed":
 
         session = event["data"]["object"]
 
-        telegram_id = int(session["client_reference_id"])
+        telegram_id = int(session.get("client_reference_id"))
 
-        subscription = session["metadata"]["plan"]
+        payment_id = session.get("id")
 
-        payment_id = session["id"]
+        plan = "Unknown"
+
+        metadata = session.get("metadata")
+
+        if metadata:
+            plan = metadata.get("plan", "Unknown")
 
         cursor.execute(
             """
@@ -54,7 +62,7 @@ def stripe_webhook():
             """,
             (
                 telegram_id,
-                subscription,
+                plan,
                 payment_id,
                 "active",
             ),
@@ -62,6 +70,6 @@ def stripe_webhook():
 
         conn.commit()
 
-        print(f"Subscription Activated : {telegram_id}")
+        print(f"Subscription Activated: {telegram_id}")
 
     return jsonify({"received": True}), 200

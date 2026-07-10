@@ -50,7 +50,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text
 
-    if text == "🎬 خرید اشتراک":
+      if text == "🎬 خرید اشتراک":
 
         keyboard = [
             [
@@ -92,7 +92,8 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "💎 لطفاً اشتراک مورد نظر را انتخاب کنید:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        elif text == "👤 حساب من":
+
+    elif text == "👤 حساب من":
 
         cursor.execute(
             """
@@ -121,7 +122,6 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "❌ هنوز اشتراکی برای این حساب ثبت نشده است."
             )
-
     elif text == "ℹ️ راهنما":
 
         await update.message.reply_text(

@@ -92,7 +92,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "💎 لطفاً اشتراک مورد نظر را انتخاب کنید:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-            elif text == "👤 حساب من":
+        elif text == "👤 حساب من":
 
         cursor.execute(
             """

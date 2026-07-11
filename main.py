@@ -108,13 +108,23 @@ WHERE user_id=?
 
         user = cursor.fetchone()
 
-        if user:
+        from datetime import datetime
 
-            await update.message.reply_text(
-                f"📦 اشتراک: {user[0]}\n"
-f"📅 اعتبار تا: {user[1]}\n"
-f"📌 وضعیت: {user[2]}"
-            )
+if user:
+
+    status = user[2]
+
+    if user[1]:
+        expire_date = datetime.fromisoformat(user[1])
+
+        if expire_date < datetime.now():
+            status = "expired"
+
+    await update.message.reply_text(
+        f"📦 اشتراک: {user[0]}\n"
+        f"📅 اعتبار تا: {user[1]}\n"
+        f"📌 وضعیت: {status}"
+    )
 
         else:
 

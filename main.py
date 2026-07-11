@@ -51,6 +51,27 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "🎬 خرید اشتراک":
+        cursor.execute(
+    """
+    SELECT expires_at, status
+    FROM users
+    WHERE user_id=?
+    """,
+    (update.effective_user.id,),
+)
+
+user = cursor.fetchone()
+
+if user and user[0] and user[1] == "active":
+
+    from datetime import datetime
+
+    if datetime.fromisoformat(user[0]) > datetime.now():
+
+        await update.message.reply_text(
+            "✅ شما هم‌اکنون اشتراک فعال دارید.\n\n📅 تا پایان اعتبار، نیازی به خرید مجدد نیست."
+        )
+        return
 
         keyboard = [
             [

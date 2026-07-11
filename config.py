@@ -2,7 +2,7 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 
-CHANNEL_ID = ""
+CHANNEL_ID = "@AKNMedia"
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 

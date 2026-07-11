@@ -43,30 +43,47 @@ def stripe_webhook():
         if metadata:
             plan = metadata.get("plan", "Unknown")
 
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO users
-            (
-                user_id,
-                subscription,
-                payment_id,
-                status
-            )
-            VALUES
-            (
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            """,
-            (
-                telegram_id,
-                plan,
-                payment_id,
-                "active",
-            ),
-        )
+        from datetime import datetime, timedelta
+
+if plan == "price_1Tr1njQ4IuPkYuATjSUy4CEz":
+    expires_at = datetime.now() + timedelta(days=30)
+
+elif plan == "price_1Tr1u9Q4IuPkYuATujbQGPwX":
+    expires_at = datetime.now() + timedelta(days=90)
+
+elif plan == "price_1Tr21JQ4IuPkYuATCbM9T1Z6":
+    expires_at = datetime.now() + timedelta(days=365)
+
+else:
+    expires_at = datetime.now()
+
+cursor.execute(
+    """
+    INSERT OR REPLACE INTO users
+    (
+        user_id,
+        subscription,
+        payment_id,
+        expires_at,
+        status
+    )
+    VALUES
+    (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?
+    )
+    """,
+    (
+        telegram_id,
+        plan,
+        payment_id,
+        expires_at.isoformat(),
+        "active",
+    ),
+)
 
             conn.commit()
 

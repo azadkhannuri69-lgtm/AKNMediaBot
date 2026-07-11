@@ -68,8 +68,19 @@ def stripe_webhook():
             ),
         )
 
-        conn.commit()
+            conn.commit()
 
-        print(f"Subscription Activated: {telegram_id}")
+    import requests
+    from config import TOKEN
+
+    requests.post(
+        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+        json={
+            "chat_id": telegram_id,
+            "text": "✅ پرداخت شما با موفقیت انجام شد.\n\n🎉 اشتراک شما فعال شد.\n\nاز AKN Media سپاسگزاریم.",
+        },
+    )
+
+    print(f"Subscription Activated: {telegram_id}")
 
     return jsonify({"received": True}), 200

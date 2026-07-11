@@ -30,34 +30,7 @@ from database import cursor
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    member = await context.bot.get_chat_member(
-        CHANNEL_ID,
-        update.effective_user.id,
-    )
-
-    if member.status in ["left", "kicked"]:
-        keyboard = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        "📢 عضویت در کانال",
-                        url="https://t.me/AKNMedia",
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "✅ عضو شدم",
-                        callback_data="check_membership",
-                    )
-                ],
-            ]
-        )
-
-        await update.message.reply_text(
-            "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید.",
-            reply_markup=keyboard,
-        )
-        return
+    
 
     keyboard = [
         ["🎬 خرید اشتراک"],

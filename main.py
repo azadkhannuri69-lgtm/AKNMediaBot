@@ -212,7 +212,12 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application = Application.builder().token(TOKEN).build()
 
 application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(check_membership))
+application.add_handler(
+    CallbackQueryHandler(
+        check_membership,
+        pattern="^check_membership$",
+    )
+)
 application.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,

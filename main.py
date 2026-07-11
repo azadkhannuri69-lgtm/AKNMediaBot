@@ -97,9 +97,9 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         cursor.execute(
             """
-            SELECT subscription, status
-            FROM users
-            WHERE user_id=?
+            SELECT subscription, expires_at, status
+FROM users
+WHERE user_id=?
             """,
             (
                 update.effective_user.id,
@@ -112,7 +112,8 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await update.message.reply_text(
                 f"📦 اشتراک: {user[0]}\n"
-                f"📌 وضعیت: {user[1]}"
+f"📅 اعتبار تا: {user[1]}\n"
+f"📌 وضعیت: {user[2]}"
             )
 
         else:

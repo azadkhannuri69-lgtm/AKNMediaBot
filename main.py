@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from telegram import (
     Update,
@@ -29,17 +30,35 @@ from database import cursor
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        member = await context.bot.get_chat_member(
+
+    member = await context.bot.get_chat_member(
         CHANNEL_ID,
         update.effective_user.id,
     )
 
     if member.status in ["left", "kicked"]:
 
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "📢 عضویت در کانال",
+                        url="https://t.me/AKNMedia",
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "✅ عضو شدم",
+                        callback_data="check_join",
+                    )
+                ],
+            ]
+        )
+
         await update.message.reply_text(
-    "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید.\n\n"
-    "https://t.me/AKNMedia"
-)
+            "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید.",
+            reply_markup=keyboard,
+        )
         return
 
     keyboard = [
@@ -48,44 +67,68 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ["ℹ️ راهنما"],
     ]
 
-    reply_markup = ReplyKeyboardMarkup(
-        keyboard,
-        resize_keyboard=True,
-    )
-
     await update.message.reply_text(
         "🎉 به AKN Media خوش آمدید.\n\n"
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید.",
-        reply_markup=reply_markup,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
+        ),
     )
 
 
-async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    member = await context.bot.get_chat_member(
+        CHANNEL_ID,
+        query.from_user.id,
+    )
+
+    if member.status not in ["left", "kicked"]:
+
+        await query.message.reply_text(
+            "✅ خوش آمدید.\n"
+            "🍿 از تماشای فیلم‌ها لذت ببرید.\n\n"
+            "✅ ښه راغلاست.\n"
+            "🍿 د فلمونو له لیدو خوند واخلئ."
+        )
+
+    else:
+
+        await query.message.reply_text(
+            "❌ هنوز عضو کانال نشده‌اید."
+        )
+        async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text
 
     if text == "🎬 خرید اشتراک":
+
         cursor.execute(
-    """
-    SELECT expires_at, status
-    FROM users
-    WHERE user_id=?
-    """,
-    (update.effective_user.id,),
-)
-
-user = cursor.fetchone()
-
-if user and user[0] and user[1] == "active":
-
-    from datetime import datetime
-
-    if datetime.fromisoformat(user[0]) > datetime.now():
-
-        await update.message.reply_text(
-            "✅ شما هم‌اکنون اشتراک فعال دارید.\n\n📅 تا پایان اعتبار، نیازی به خرید مجدد نیست."
+            """
+            SELECT expires_at, status
+            FROM users
+            WHERE user_id=?
+            """,
+            (
+                update.effective_user.id,
+            ),
         )
-        return
+
+        user = cursor.fetchone()
+
+        if user and user[0] and user[1] == "active":
+
+            if datetime.fromisoformat(user[0]) > datetime.now():
+
+                await update.message.reply_text(
+                    "✅ شما هم‌اکنون اشتراک فعال دارید.\n\n"
+                    "📅 تا پایان اعتبار، نیازی به خرید مجدد نیست."
+                )
+                return
 
         keyboard = [
             [
@@ -133,8 +176,8 @@ if user and user[0] and user[1] == "active":
         cursor.execute(
             """
             SELECT subscription, expires_at, status
-FROM users
-WHERE user_id=?
+            FROM users
+            WHERE user_id=?
             """,
             (
                 update.effective_user.id,
@@ -143,23 +186,22 @@ WHERE user_id=?
 
         user = cursor.fetchone()
 
-        from datetime import datetime
+        if user:
 
-if user:
+            status = user[2]
 
-    status = user[2]
+            if user[1]:
 
-    if user[1]:
-        expire_date = datetime.fromisoformat(user[1])
+                expire_date = datetime.fromisoformat(user[1])
 
-        if expire_date < datetime.now():
-            status = "expired"
+                if expire_date < datetime.now():
+                    status = "expired"
 
-    await update.message.reply_text(
-        f"📦 اشتراک: {user[0]}\n"
-        f"📅 اعتبار تا: {user[1]}\n"
-        f"📌 وضعیت: {status}"
-    )
+            await update.message.reply_text(
+                f"📦 اشتراک: {user[0]}\n"
+                f"📅 اعتبار تا: {user[1]}\n"
+                f"📌 وضعیت: {status}"
+            )
 
         else:
 
@@ -178,11 +220,22 @@ if user:
         await update.message.reply_text(
             "لطفاً یکی از دکمه‌های منو را انتخاب کنید."
         )
+        application = Application.builder().token(TOKEN).build()
 
+application.add_handler(
+    CommandHandler(
+        "start",
+        start,
+    )
+)
 
-application = Application.builder().token(TOKEN).build()
+application.add_handler(
+    CallbackQueryHandler(
+        check_join,
+        pattern="^check_join$",
+    )
+)
 
-application.add_handler(CommandHandler("start", start))
 application.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,
@@ -203,13 +256,16 @@ async def run():
     )
 
     try:
+
         while True:
             await asyncio.sleep(3600)
 
     except (KeyboardInterrupt, SystemExit):
+
         pass
 
     finally:
+
         await application.updater.stop()
         await application.stop()
         await application.shutdown()

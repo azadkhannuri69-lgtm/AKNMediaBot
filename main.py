@@ -17,6 +17,7 @@ from telegram.ext import (
 
 from config import (
     TOKEN,
+    CHANNEL_ID,
     PRICE_1_MONTH,
     PRICE_3_MONTHS,
     PRICE_12_MONTHS,
@@ -27,6 +28,18 @@ from database import cursor
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        member = await context.bot.get_chat_member(
+        CHANNEL_ID,
+        update.effective_user.id,
+    )
+
+    if member.status in ["left", "kicked"]:
+
+        await update.message.reply_text(
+            "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید."
+        )
+
+        return
 
     keyboard = [
         ["🎬 خرید اشتراک"],

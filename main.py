@@ -36,9 +36,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if member.status in ["left", "kicked"]:
 
         await update.message.reply_text(
-            "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید."
-        )
-
+    "⚠️ برای استفاده از ربات ابتدا در کانال عضو شوید.\n\n"
+    "https://t.me/USERNAME_CHANNEL"
+)
         return
 
     keyboard = [

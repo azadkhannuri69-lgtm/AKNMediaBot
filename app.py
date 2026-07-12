@@ -6,4 +6,4 @@ app.register_blueprint(webhook)
 
 @app.route("/")
 def home():
-    return "AKN Media Bot is running."
+    return "AKN Media Bot Webhook Server is running."

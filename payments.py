@@ -11,7 +11,6 @@ from config import (
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-
 PRICE_IDS = {
     "week": PRICE_1_WEEK,
     "month": PRICE_1_MONTH,
@@ -26,7 +25,7 @@ def create_checkout_session(plan: str, telegram_id: int):
         raise ValueError("Invalid subscription plan.")
 
     session = stripe.checkout.Session.create(
-        mode="payment",
+        mode="subscription",
         payment_method_types=["card"],
         line_items=[
             {
@@ -34,9 +33,10 @@ def create_checkout_session(plan: str, telegram_id: int):
                 "quantity": 1,
             }
         ],
-        success_url=f"{BASE_URL}/success",
+        success_url=f"{BASE_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{BASE_URL}/cancel",
         client_reference_id=str(telegram_id),
+        allow_promotion_codes=True,
     )
 
     return session.url

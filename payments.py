@@ -1,42 +1,32 @@
 import stripe
 
-from config import (
-    STRIPE_SECRET_KEY,
-    BASE_URL,
-    PRICE_1_WEEK,
-    PRICE_1_MONTH,
-    PRICE_3_MONTHS,
-    PRICE_12_MONTHS,
-)
+from config import STRIPE_SECRET_KEY
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-PRICE_IDS = {
-    "week": PRICE_1_WEEK,
-    "month": PRICE_1_MONTH,
-    "3months": PRICE_3_MONTHS,
-    "12months": PRICE_12_MONTHS,
-}
 
-
-def create_checkout_session(plan: str, telegram_id: int):
-
-    if plan not in PRICE_IDS:
-        raise ValueError("Invalid subscription plan.")
-
+def create_checkout_session(
+    price_id,
+    success_url,
+    cancel_url,
+    telegram_id,
+):
     session = stripe.checkout.Session.create(
         mode="subscription",
         payment_method_types=["card"],
         line_items=[
             {
-                "price": PRICE_IDS[plan],
+                "price": price_id,
                 "quantity": 1,
             }
         ],
-        success_url=f"{BASE_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{BASE_URL}/cancel",
+        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=cancel_url,
         client_reference_id=str(telegram_id),
-        allow_promotion_codes=True,
+        metadata={
+            "telegram_id": str(telegram_id),
+            "plan": price_id,
+        },
     )
 
     return session.url

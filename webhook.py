@@ -1,9 +1,16 @@
 from flask import Blueprint, request
-
 import stripe
 from datetime import datetime, timedelta
 
-from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+from config import (
+    STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET,
+    PRICE_1_WEEK,
+    PRICE_1_MONTH,
+    PRICE_3_MONTHS,
+    PRICE_12_MONTHS,
+)
+
 from database import save_subscription
 
 webhook = Blueprint("webhook", __name__)
@@ -13,48 +20,63 @@ stripe.api_key = STRIPE_SECRET_KEY
 
 @webhook.route("/webhook", methods=["POST"])
 def stripe_webhook():
+
     payload = request.data
-    sig_header = request.headers.get("Stripe-Signature")
+    signature = request.headers.get("Stripe-Signature")
 
     try:
         event = stripe.Webhook.construct_event(
             payload,
-            sig_header,
-            STRIPE_WEBHOOK_SECRET
+            signature,
+            STRIPE_WEBHOOK_SECRET,
         )
+
     except Exception:
-        return "Invalid webhook", 400
+        return "Invalid Webhook", 400
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
+    if event["type"] != "checkout.session.completed":
+        return "OK", 200
 
-        user_id = int(session["client_reference_id"])
-        payment_id = session["payment_intent"]
+    session = event["data"]["object"]
 
-        price_id = session["line_items"]["data"][0]["price"]["id"] if "line_items" in session else ""
+    session = stripe.checkout.Session.retrieve(
+        session["id"],
+        expand=["line_items"],
+    )
 
-        if price_id == "PRICE_1_WEEK":
-            plan = "1 Week"
-            expires = datetime.utcnow() + timedelta(days=7)
+    user_id = int(session["client_reference_id"])
 
-        elif price_id == "PRICE_1_MONTH":
-            plan = "1 Month"
-            expires = datetime.utcnow() + timedelta(days=30)
+    payment_id = session.get("payment_intent", "")
 
-        elif price_id == "PRICE_3_MONTHS":
-            plan = "3 Months"
-            expires = datetime.utcnow() + timedelta(days=90)
+    username = session.get("customer_details", {}).get("name", "")
 
-        else:
-            plan = "12 Months"
-            expires = datetime.utcnow() + timedelta(days=365)
+    price_id = session["line_items"]["data"][0]["price"]["id"]
 
-        save_subscription(
-            user_id=user_id,
-            username="",
-            subscription=plan,
-            payment_id=payment_id,
-            expires_at=expires.isoformat()
-        )
+    if price_id == PRICE_1_WEEK:
+        subscription = "1 Week"
+        expires_at = datetime.utcnow() + timedelta(days=7)
+
+    elif price_id == PRICE_1_MONTH:
+        subscription = "1 Month"
+        expires_at = datetime.utcnow() + timedelta(days=30)
+
+    elif price_id == PRICE_3_MONTHS:
+        subscription = "3 Months"
+        expires_at = datetime.utcnow() + timedelta(days=90)
+
+    elif price_id == PRICE_12_MONTHS:
+        subscription = "12 Months"
+        expires_at = datetime.utcnow() + timedelta(days=365)
+
+    else:
+        return "Unknown Plan", 400
+
+    save_subscription(
+        user_id=user_id,
+        username=username,
+        subscription=subscription,
+        payment_id=payment_id,
+        expires_at=expires_at.isoformat(),
+    )
 
     return "OK", 200

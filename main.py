@@ -1,12 +1,10 @@
+import logging
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from telegram.constants import ChatMemberStatus
-import logging
-import threading
 from config import TOKEN, CHANNEL_ID
 from database import init_db, get_user, has_active_subscription
 from payments import create_checkout_session
-from app import app as flask_app
 
 logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,14 +62,16 @@ async def subscription_callback(update: Update, context: ContextTypes.DEFAULT_TY
         logger.error(e)
         await query.message.reply_text("خطا در درگاه پرداخت.")
 
-def run_flask():
-    flask_app.run(host="0.0.0.0", port=10000)
+async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "🎬 خرید اشتراک": await buy_subscription(update, context)
+    elif text == "👤 حساب من": await my_account(update, context)
+    elif text == "ℹ️ راهنما": await update.message.reply_text("راهنما...")
 
 if __name__ == "__main__":
-    threading.Thread(target=run_flask, daemon=True).start()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, lambda u, c: {"🎬 خرید اشتراک": buy_subscription, "👤 حساب من": my_account, "ℹ️ راهنما": lambda u, c: u.message.reply_text("راهنما...")}[u.message.text](u, c) if u.message.text in ["🎬 خرید اشتراک", "👤 حساب من", "ℹ️ راهنما"] else None))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
     app.add_handler(CallbackQueryHandler(check_join, pattern="^check_join$"))
     app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^plan_"))
     app.run_polling()

@@ -21,6 +21,7 @@ PRICE_IDS = {
 
 
 def create_checkout_session(plan: str, telegram_id: int):
+
     if plan not in PRICE_IDS:
         raise ValueError("Invalid subscription plan.")
 
@@ -33,9 +34,9 @@ def create_checkout_session(plan: str, telegram_id: int):
                 "quantity": 1,
             }
         ],
-        client_reference_id=str(telegram_id),
         success_url=f"{BASE_URL}/success",
         cancel_url=f"{BASE_URL}/cancel",
+        client_reference_id=str(telegram_id),
     )
 
     return session.url

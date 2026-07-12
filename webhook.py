@@ -1,19 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
+
 import stripe
-import requests
 from datetime import datetime, timedelta
 
-from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, TOKEN
-from database import cursor, conn
-
-stripe.api_key = STRIPE_SECRET_KEY
+from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+from database import save_subscription
 
 webhook = Blueprint("webhook", __name__)
+
+stripe.api_key = STRIPE_SECRET_KEY
 
 
 @webhook.route("/webhook", methods=["POST"])
 def stripe_webhook():
-
     payload = request.data
     sig_header = request.headers.get("Stripe-Signature")
 
@@ -21,75 +20,41 @@ def stripe_webhook():
         event = stripe.Webhook.construct_event(
             payload,
             sig_header,
-            STRIPE_WEBHOOK_SECRET,
+            STRIPE_WEBHOOK_SECRET
         )
-
-    except ValueError:
-        return jsonify({"error": "Invalid payload"}), 400
-
-    except stripe.error.SignatureVerificationError:
-        return jsonify({"error": "Invalid signature"}), 400
+    except Exception:
+        return "Invalid webhook", 400
 
     if event["type"] == "checkout.session.completed":
-
         session = event["data"]["object"]
 
-        telegram_id = int(session.get("client_reference_id"))
-        payment_id = session.get("id")
+        user_id = int(session["client_reference_id"])
+        payment_id = session["payment_intent"]
 
-        metadata = session.get("metadata", {})
-        plan = metadata.get("plan", "Unknown")
+        price_id = session["line_items"]["data"][0]["price"]["id"] if "line_items" in session else ""
 
-        if plan == "price_1Tr1njQ4IuPkYuATjSUy4CEz":
-            expires_at = datetime.now() + timedelta(days=30)
+        if price_id == "PRICE_1_WEEK":
+            plan = "1 Week"
+            expires = datetime.utcnow() + timedelta(days=7)
 
-        elif plan == "price_1Tr1u9Q4IuPkYuATujbQGPwX":
-            expires_at = datetime.now() + timedelta(days=90)
+        elif price_id == "PRICE_1_MONTH":
+            plan = "1 Month"
+            expires = datetime.utcnow() + timedelta(days=30)
 
-        elif plan == "price_1Tr21JQ4IuPkYuATCbM9T1Z6":
-            expires_at = datetime.now() + timedelta(days=365)
+        elif price_id == "PRICE_3_MONTHS":
+            plan = "3 Months"
+            expires = datetime.utcnow() + timedelta(days=90)
 
         else:
-            expires_at = datetime.now()
+            plan = "12 Months"
+            expires = datetime.utcnow() + timedelta(days=365)
 
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO users
-            (
-                user_id,
-                subscription,
-                payment_id,
-                expires_at,
-                status
-            )
-            VALUES
-            (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            """,
-            (
-                telegram_id,
-                plan,
-                payment_id,
-                expires_at.isoformat(),
-                "active",
-            ),
+        save_subscription(
+            user_id=user_id,
+            username="",
+            subscription=plan,
+            payment_id=payment_id,
+            expires_at=expires.isoformat()
         )
 
-        conn.commit()
-
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            json={
-                "chat_id": telegram_id,
-                "text": "✅ پرداخت شما با موفقیت انجام شد.\n\n🎉 اشتراک شما فعال شد.\n\nاز AKN Media سپاسگزاریم.",
-            },
-        )
-
-        print(f"Subscription Activated: {telegram_id}")
-
-    return jsonify({"received": True}), 200
+    return "OK", 200

@@ -33,7 +33,32 @@ from database import (
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    
+member = await context.bot.get_chat_member(
+    CHANNEL_ID,
+    update.effective_user.id,
+)
+
+if member.status in ["left", "kicked"]:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "📢 عضویت در کانال",
+                url="https://t.me/AKNMedia",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "✅ بررسی عضویت",
+                callback_data="check_membership",
+            )
+        ],
+    ]
+
+    await update.message.reply_text(
+        "ابتدا عضو کانال شوید.",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+    return    
 
     keyboard = [
         ["🎬 خرید اشتراک"],
@@ -53,7 +78,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+try:
+    member = await context.bot.get_chat_member(
+        CHANNEL_ID,
+        query.from_user.id,
+    )
+except Exception:
+    await query.message.reply_text(
+        "❌ خطا در بررسی عضویت."
+    )
+    return
+    
     member = await context.bot.get_chat_member(
         CHANNEL_ID,
         query.from_user.id,
@@ -176,12 +211,15 @@ application.add_handler(
         menu,
     )
 )
+application.add_error_handler(error_handler)
 
-
+async def error_handler(update, context):
+    print(f"❌ Error: {context.error}")
 async def run():
     print("Bot is running...")
 
     await application.initialize()
+    await application.bot.delete_webhook(drop_pending_updates=True)
     await application.start()
 
     await application.updater.start_polling(

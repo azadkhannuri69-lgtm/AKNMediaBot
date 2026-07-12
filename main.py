@@ -6,13 +6,16 @@ from config import TOKEN, CHANNEL_ID
 from database import init_db, get_user, has_active_subscription
 from payments import create_checkout_session
 
+# تنظیم لاگینگ
 logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# مقداردهی دیتابیس
 init_db()
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup([["🎬 خرید اشتراک"], ["👤 حساب من"], ["ℹ️ راهنما"]], resize_keyboard=True)
 
+# توابع منطقی ربات
 async def is_member(context, user_id: int) -> bool:
     try:
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
@@ -68,10 +71,13 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "👤 حساب من": await my_account(update, context)
     elif text == "ℹ️ راهنما": await update.message.reply_text("راهنما...")
 
+# بخش اصلی اجرای ربات
 if __name__ == "__main__":
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
     app.add_handler(CallbackQueryHandler(check_join, pattern="^check_join$"))
     app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^plan_"))
+    
+    print("Bot is running...")
     app.run_polling()

@@ -1,14 +1,21 @@
 import os
 
+# Telegram
 TOKEN = os.getenv("TOKEN")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-CHANNEL_ID = "@AKNMedia"
-
+# Stripe
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-PRICE_1_MONTH = "price_1Tr1njQ4IuPkYuATjSUy4CEz"
 
-PRICE_3_MONTHS = "price_1Tr1u9Q4IuPkYuATujbQGPwX"
+# Price IDs
+PRICE_1_WEEK = os.getenv("PRICE_1_WEEK")
+PRICE_1_MONTH = os.getenv("PRICE_1_MONTH")
+PRICE_3_MONTHS = os.getenv("PRICE_3_MONTHS")
+PRICE_12_MONTHS = os.getenv("PRICE_12_MONTHS")
 
-PRICE_12_MONTHS = "price_1Tr21JQ4IuPkYuATCbM9T1Z6"
+# Website
+BASE_URL = os.getenv("BASE_URL")
+
+# Database
+DATABASE_NAME = "database.db"

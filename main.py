@@ -26,8 +26,10 @@ from config import (
 )
 
 from payments import create_checkout_session
-from database import cursor
-
+from database import (
+    get_user,
+    has_active_subscription,
+)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     

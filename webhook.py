@@ -20,7 +20,6 @@ stripe.api_key = STRIPE_SECRET_KEY
 
 @webhook.route("/webhook", methods=["POST"])
 def stripe_webhook():
-
     payload = request.data
     signature = request.headers.get("Stripe-Signature")
 
@@ -30,7 +29,6 @@ def stripe_webhook():
             signature,
             STRIPE_WEBHOOK_SECRET,
         )
-
     except Exception:
         return "Invalid Webhook", 400
 
@@ -41,14 +39,25 @@ def stripe_webhook():
 
     session = stripe.checkout.Session.retrieve(
         session["id"],
-        expand=["line_items"],
+        expand=[
+            "line_items",
+            "subscription",
+            "customer",
+        ],
     )
 
-    user_id = int(session["client_reference_id"])
+    try:
+        user_id = int(session["client_reference_id"])
+    except Exception:
+        return "Missing Telegram ID", 400
 
-    payment_id = session.get("payment_intent", "")
+    username = ""
 
-    username = session.get("customer_details", {}).get("name", "")
+    customer_details = session.get("customer_details")
+    if customer_details:
+        username = customer_details.get("name", "")
+
+    subscription_id = session.get("subscription", "")
 
     price_id = session["line_items"]["data"][0]["price"]["id"]
 
@@ -69,14 +78,15 @@ def stripe_webhook():
         expires_at = datetime.utcnow() + timedelta(days=365)
 
     else:
-        return "Unknown Plan", 400
+        return "Unknown Price ID", 400
 
     save_subscription(
         user_id=user_id,
         username=username,
         subscription=subscription,
-        payment_id=payment_id,
+        payment_id=subscription_id,
         expires_at=expires_at.isoformat(),
+        status="active",
     )
 
     return "OK", 200

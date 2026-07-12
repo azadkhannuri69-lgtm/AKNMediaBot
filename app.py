@@ -1,32 +1,39 @@
 from flask import Flask
+
 from webhook import webhook
-from database import init_db
 
 app = Flask(__name__)
 
-# ایجاد دیتابیس هنگام اجرای برنامه
-init_db()
-
-# ثبت Webhook
 app.register_blueprint(webhook)
 
 
 @app.route("/")
 def home():
+    return "AKN Media Bot is running."
+
+
+@app.route("/health")
+def health():
     return {
-        "status": "online",
+        "status": "ok",
         "service": "AKNMediaBot"
     }, 200
 
 
 @app.route("/success")
 def success():
-    return "Payment Successful ✅", 200
+    return """
+    <h2>✅ Payment Successful</h2>
+    <p>You can now return to Telegram and use the bot.</p>
+    """, 200
 
 
 @app.route("/cancel")
 def cancel():
-    return "Payment Cancelled ❌", 200
+    return """
+    <h2>❌ Payment Cancelled</h2>
+    <p>No payment has been made.</p>
+    """, 200
 
 
 if __name__ == "__main__":

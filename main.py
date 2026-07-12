@@ -105,32 +105,28 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "🥉 اشتراک ۱ ماهه (€2.99)",
                     url=create_checkout_session(
                         PRICE_1_MONTH,
-                        "https://aknmediaweb.onrender.com/success",
-                        "https://aknmediaweb.onrender.com/cancel",
-                        update.effective_user.id,
-                    ),
+                        url=create_checkout_session(
+    "month",
+    update.effective_user.id,
+),
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🥈 اشتراک ۳ ماهه (€6.99)",
-                    url=create_checkout_session(
-                        PRICE_3_MONTHS,
-                        "https://aknmediaweb.onrender.com/success",
-                        "https://aknmediaweb.onrender.com/cancel",
-                        update.effective_user.id,
-                    ),
+                   url=create_checkout_session(
+    "3months",
+    update.effective_user.id,
+),
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🥇 اشتراک ۱۲ ماهه (€19.99)",
-                    url=create_checkout_session(
-                        PRICE_12_MONTHS,
-                        "https://aknmediaweb.onrender.com/success",
-                        "https://aknmediaweb.onrender.com/cancel",
-                        update.effective_user.id,
-                    ),
+                   url=create_checkout_session(
+    "12months",
+    update.effective_user.id,
+),
                 )
             ],
         ]
@@ -141,35 +137,18 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif text == "👤 حساب من":
-        cursor.execute(
-            """
-            SELECT subscription, expires_at, status
-            FROM users
-            WHERE user_id=?
-            """,
-            (update.effective_user.id,),
-        )
+        user = get_user(update.effective_user.id)
 
-        user = cursor.fetchone()
-
-        if user:
-            status = user[2]
-
-            if user[1]:
-                expire_date = datetime.fromisoformat(user[1])
-
-                if expire_date < datetime.now():
-                    status = "expired"
-
-            await update.message.reply_text(
-                f"📦 اشتراک: {user[0]}\n"
-                f"📅 اعتبار تا: {user[1]}\n"
-                f"📌 وضعیت: {status}"
-            )
-        else:
-            await update.message.reply_text(
-                "❌ هنوز اشتراکی برای این حساب ثبت نشده است."
-            )
+if user:
+    await update.message.reply_text(
+        f"📦 اشتراک: {user['subscription']}\n"
+        f"📅 اعتبار تا: {user['expires_at']}\n"
+        f"📌 وضعیت: {user['status']}"
+    )
+else:
+    await update.message.reply_text(
+        "❌ هنوز اشتراکی ثبت نشده است."
+    )
 
     elif text == "ℹ️ راهنما":
         await update.message.reply_text(

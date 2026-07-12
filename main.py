@@ -20,6 +20,7 @@ from telegram.ext import (
 from config import (
     TOKEN,
     CHANNEL_ID,
+    PRICE_1_WEEK,
     PRICE_1_MONTH,
     PRICE_3_MONTHS,
     PRICE_12_MONTHS,
@@ -83,27 +84,24 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "🎬 خرید اشتراک":
-        cursor.execute(
-            """
-            SELECT expires_at, status
-            FROM users
-            WHERE user_id=?
-            """,
-            (update.effective_user.id,),
-        )
-
-        user = cursor.fetchone()
-
-        if user and user[0] and user[1] == "active":
-            if datetime.fromisoformat(user[0]) > datetime.now():
-                await update.message.reply_text(
-                    "✅ شما هم‌اکنون اشتراک فعال دارید.\n\n📅 تا پایان اعتبار، نیازی به خرید مجدد نیست."
-                )
-                return
+        if has_active_subscription(update.effective_user.id):
+    await update.message.reply_text(
+        "✅ شما هم‌اکنون اشتراک فعال دارید."
+    )
+    return
 
         keyboard = [
             [
                 InlineKeyboardButton(
+                    [
+    InlineKeyboardButton(
+        "⭐ اشتراک ۱ هفته (€0.99)",
+        url=create_checkout_session(
+            "week",
+            update.effective_user.id,
+        ),
+    )
+],
                     "🥉 اشتراک ۱ ماهه (€2.99)",
                     url=create_checkout_session(
                         PRICE_1_MONTH,

@@ -14,21 +14,21 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY,
-        username TEXT,
-        subscription TEXT,
-        payment_id TEXT,
-        expires_at TEXT,
-        status TEXT
-    )
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            subscription TEXT,
+            payment_id TEXT,
+            expires_at TEXT,
+            status TEXT
+        )
     """)
 
     conn.commit()
     conn.close()
 
 
-def get_user(user_id):
+def get_user(user_id: int):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -42,34 +42,42 @@ def get_user(user_id):
     return user
 
 
-def save_subscription(user_id, username, subscription, payment_id, expires_at):
+def save_subscription(
+    user_id: int,
+    username: str,
+    subscription: str,
+    payment_id: str,
+    expires_at: str,
+    status: str = "active",
+):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-    INSERT INTO users
-    (user_id, username, subscription, payment_id, expires_at, status)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET
-        username=excluded.username,
-        subscription=excluded.subscription,
-        payment_id=excluded.payment_id,
-        expires_at=excluded.expires_at,
-        status='active'
+        INSERT INTO users
+        (user_id, username, subscription, payment_id, expires_at, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id)
+        DO UPDATE SET
+            username=excluded.username,
+            subscription=excluded.subscription,
+            payment_id=excluded.payment_id,
+            expires_at=excluded.expires_at,
+            status=excluded.status
     """, (
         user_id,
         username,
         subscription,
         payment_id,
         expires_at,
-        "active"
+        status,
     ))
 
     conn.commit()
     conn.close()
 
 
-def has_active_subscription(user_id):
+def has_active_subscription(user_id: int):
     user = get_user(user_id)
 
     if not user:
@@ -79,21 +87,21 @@ def has_active_subscription(user_id):
         return False
 
     try:
-        return datetime.fromisoformat(user["expires_at"]) > datetime.utcnow()
-    except:
+        expires = datetime.fromisoformat(user["expires_at"])
+    except Exception:
         return False
 
+    return expires > datetime.utcnow()
 
-def deactivate_expired():
-    conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-    UPDATE users
-    SET status='expired'
-    WHERE expires_at IS NOT NULL
-      AND expires_at < ?
-    """, (datetime.utcnow().isoformat(),))
+def get_subscription_info(user_id: int):
+    user = get_user(user_id)
 
-    conn.commit()
-    conn.close()
+    if not user:
+        return None
+
+    return {
+        "subscription": user["subscription"],
+        "expires_at": user["expires_at"],
+        "status": user["status"],
+    }

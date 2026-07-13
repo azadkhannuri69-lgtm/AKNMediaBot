@@ -28,12 +28,12 @@ def init_db():
     conn.close()
 
 
-def get_user(user_id: int):
+def get_user(user_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT * FROM users WHERE user_id=?",
+        "SELECT * FROM users WHERE user_id = ?",
         (user_id,)
     )
 
@@ -42,14 +42,7 @@ def get_user(user_id: int):
     return user
 
 
-def save_subscription(
-    user_id: int,
-    username: str,
-    subscription: str,
-    payment_id: str,
-    expires_at: str,
-    status: str = "active",
-):
+def save_subscription(user_id, username, subscription, payment_id, expires_at, status="active"):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -57,8 +50,7 @@ def save_subscription(
         INSERT INTO users
         (user_id, username, subscription, payment_id, expires_at, status)
         VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(user_id)
-        DO UPDATE SET
+        ON CONFLICT(user_id) DO UPDATE SET
             username=excluded.username,
             subscription=excluded.subscription,
             payment_id=excluded.payment_id,
@@ -77,7 +69,7 @@ def save_subscription(
     conn.close()
 
 
-def has_active_subscription(user_id: int):
+def has_active_subscription(user_id):
     user = get_user(user_id)
 
     if not user:
@@ -94,7 +86,7 @@ def has_active_subscription(user_id: int):
     return expires > datetime.utcnow()
 
 
-def get_subscription_info(user_id: int):
+def get_subscription_info(user_id):
     user = get_user(user_id)
 
     if not user:

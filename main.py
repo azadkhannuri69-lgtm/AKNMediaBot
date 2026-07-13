@@ -49,7 +49,7 @@ async def is_member(context, user_id: int) -> bool:
     except Exception as e:
         logger.error(f"Membership Error: {e}")
         return False
-        async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     if not await is_member(context, user.id):
@@ -86,7 +86,7 @@ async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "❌ هنوز عضو کانال نیستید.",
             show_alert=True,
         )
-        async def buy_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def buy_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     if has_active_subscription(user.id):
@@ -127,7 +127,7 @@ async def subscription_callback(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text(
             "❌ خطا در ایجاد لینک پرداخت."
         )
-        async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "🎬 خرید اشتراک":
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     print("✅ Bot Started")
     app.run_polling(drop_pending_updates=True)
-    async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     info = get_user(user.id)
@@ -172,9 +172,3 @@ if __name__ == "__main__":
     )
 
     await update.message.reply_text(text)
-    logger.info("Bot is running...")
-
-app.run_polling(
-    drop_pending_updates=True,
-    allowed_updates=Update.ALL_TYPES,
-)

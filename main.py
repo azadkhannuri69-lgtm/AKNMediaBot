@@ -46,13 +46,12 @@ async def is_member(context, user_id: int) -> bool:
             ChatMemberStatus.ADMINISTRATOR,
             ChatMemberStatus.OWNER,
         )
-    except Exception as e:
-        logger.error(f"Membership Error: {e}")
-        return False
+except Exception as e:
+    logger.error(f"Membership Error: {e}")
+    return False
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
 
     if not await is_member(context, user.id):
         keyboard = InlineKeyboardMarkup([
@@ -174,3 +173,27 @@ async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_text(text)
+    async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+
+    if text == "🎬 خرید اشتراک":
+        await buy_subscription(update, context)
+
+    elif text == "👤 حساب من":
+        await my_account(update, context)
+
+    elif text == "ℹ️ راهنما":
+        await update.message.reply_text("ربات AKN Media آماده استفاده است.")
+
+
+if __name__ == "__main__":
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
+    app.add_handler(CallbackQueryHandler(check_join, pattern="^check_join$"))
+    app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^plan_"))
+
+    print("✅ Bot Started")
+
+    app.run_polling(drop_pending_updates=True)

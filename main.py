@@ -49,7 +49,9 @@ async def is_member(context, user_id: int) -> bool:
     except Exception as e:
         logger.error(f"Membership Error: {e}")
         return False
-    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     if not await is_member(context, user.id):

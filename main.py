@@ -22,7 +22,6 @@ application = Application.builder().token(TOKEN).build()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     keyboard = [
         [
             InlineKeyboardButton(
@@ -54,8 +53,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎬 اشتراک مورد نظر را انتخاب کنید.",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    async def select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+
+async def select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -94,9 +94,7 @@ application.add_handler(
     )
 )
 
-
 if __name__ == "__main__":
-
     print("AKN Media Bot Started")
 
     application.run_polling(

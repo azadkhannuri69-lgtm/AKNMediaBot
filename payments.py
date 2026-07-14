@@ -1,3 +1,4 @@
+import logging
 import stripe
 
 from config import (
@@ -9,11 +10,12 @@ from config import (
     PRICE_12_MONTHS,
 )
 
+logging.basicConfig(level=logging.INFO)
+
 stripe.api_key = STRIPE_SECRET_KEY
 
 
 def create_checkout_session(plan, telegram_id):
-
     prices = {
         "week": PRICE_1_WEEK,
         "month": PRICE_1_MONTH,
@@ -21,29 +23,29 @@ def create_checkout_session(plan, telegram_id):
         "12months": PRICE_12_MONTHS,
     }
 
-    session = stripe.checkout.Session.create(
-        mode="payment",
+    if plan not in prices:
+        raise ValueError(f"Unknown plan: {plan}")
 
-        payment_method_types=[
-            "card",
-        ],
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price": prices[plan],
+                    "quantity": 1,
+                }
+            ],
+            client_reference_id=str(telegram_id),
+            metadata={
+                "plan": plan,
+            },
+            success_url=f"{BASE_URL}/success",
+            cancel_url=f"{BASE_URL}/cancel",
+        )
 
-        line_items=[
-            {
-                "price": prices[plan],
-                "quantity": 1,
-            }
-        ],
+        return session.url
 
-        client_reference_id=str(telegram_id),
-
-        metadata={
-            "plan": plan,
-        },
-
-        success_url=f"{BASE_URL}/success",
-
-        cancel_url=f"{BASE_URL}/cancel",
-    )
-
-    return session.url
+    except Exception as e:
+        logging.exception("Stripe Checkout Error")
+        raise e

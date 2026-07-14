@@ -1,50 +1,37 @@
-import stripe
+from flask import Flask
 
-from config import (
-    STRIPE_SECRET_KEY,
-    BASE_URL,
-    PRICE_1_WEEK,
-    PRICE_1_MONTH,
-    PRICE_3_MONTHS,
-    PRICE_12_MONTHS,
-)
+from webhook import webhook
 
-stripe.api_key = STRIPE_SECRET_KEY
+app = Flask(__name__)
+
+app.register_blueprint(webhook)
 
 
-def create_checkout_session(plan, telegram_id):
+@app.route("/")
+def home():
+    return "AKN Media Webhook is Running"
 
-    prices = {
-        "week": PRICE_1_WEEK,
-        "month": PRICE_1_MONTH,
-        "3months": PRICE_3_MONTHS,
-        "12months": PRICE_12_MONTHS,
-    }
 
-    session = stripe.checkout.Session.create(
-
-        mode="payment",
-
-        payment_method_types=[
-            "card",
-        ],
-
-        line_items=[
-            {
-                "price": prices[plan],
-                "quantity": 1,
-            }
-        ],
-
-        client_reference_id=str(telegram_id),
-
-        metadata={
-            "plan": plan,
-        },
-
-        success_url=f"{BASE_URL}/success",
-
-        cancel_url=f"{BASE_URL}/cancel",
+@app.route("/success")
+def success():
+    return (
+        "✅ Payment successful."
+        "<br><br>"
+        "You can now return to Telegram."
     )
 
-    return session.url
+
+@app.route("/cancel")
+def cancel():
+    return (
+        "❌ Payment cancelled."
+        "<br><br>"
+        "Return to Telegram and try again."
+    )
+
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=10000,
+    )

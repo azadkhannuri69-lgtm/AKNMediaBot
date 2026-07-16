@@ -1,12 +1,23 @@
 from flask import Blueprint, request, jsonify
 import stripe
+import asyncio
 
-from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+from telegram import Bot
+
+from config import (
+    TOKEN,
+    CHANNEL_ID,
+    STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET,
+)
+
 from database import conn, cursor
 
-webhook = Blueprint("webhook", __name__)
-
 stripe.api_key = STRIPE_SECRET_KEY
+
+bot = Bot(TOKEN)
+
+webhook = Blueprint("webhook", __name__)
 
 
 @webhook.route("/webhook", methods=["POST"])
@@ -22,7 +33,8 @@ def stripe_webhook():
             STRIPE_WEBHOOK_SECRET,
         )
 
-    except Exception:
+    except Exception as e:
+        print(e)
         return jsonify({"success": False}), 400
 
     if event["type"] == "checkout.session.completed":
@@ -36,19 +48,8 @@ def stripe_webhook():
         cursor.execute(
             """
             INSERT OR REPLACE INTO users
-            (
-                user_id,
-                plan,
-                payment_id,
-                status
-            )
-            VALUES
-            (
-                ?,
-                ?,
-                ?,
-                ?
-            )
+            (user_id, plan, payment_id, status)
+            VALUES (?, ?, ?, ?)
             """,
             (
                 telegram_id,
@@ -60,8 +61,23 @@ def stripe_webhook():
 
         conn.commit()
 
-        print(f"Subscription Activated: {telegram_id}")
+        async def send_invite():
 
-        # اینجا بعداً لینک دعوت کانال ارسال می‌شود.
+            invite = await bot.create_chat_invite_link(
+                chat_id=CHANNEL_ID,
+                member_limit=1,
+                creates_join_request=False,
+            )
+
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=(
+                    "✅ پرداخت شما با موفقیت انجام شد.\n\n"
+                    "برای ورود به کانال از لینک زیر استفاده کنید:\n\n"
+                    f"{invite.invite_link}"
+                ),
+            )
+
+        asyncio.run(send_invite())
 
     return jsonify({"received": True}), 200

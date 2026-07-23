@@ -4,30 +4,30 @@ from database import init_db
 
 app = Flask(__name__)
 
-# ایجاد دیتابیس هنگام اجرای برنامه
+# Initialize SQLite
 init_db()
 
-# ثبت Webhook
-app.register_blueprint(webhook)
+# Register Stripe Webhook
+app.register_blueprint(webhook, url_prefix="/")
 
-
-@app.route("/")
+@app.get("/")
 def home():
     return {
         "status": "online",
-        "service": "AKNMediaBot"
+        "service": "AKNMediaBot",
+        "webhook": "/webhook"
     }, 200
 
 
-@app.route("/success")
+@app.get("/success")
 def success():
     return "Payment Successful ✅", 200
 
 
-@app.route("/cancel")
+@app.get("/cancel")
 def cancel():
     return "Payment Cancelled ❌", 200
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host="0.0.0.0", port=10000, debug=False)
